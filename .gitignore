@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Checkpoints (large files)
+checkpoints/
+*.ckpt
+
+# Test files
+test_io/
+
+# Environment
+.env
+.venv
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Audio outputs
+outputs/
+*.wav
+*.mp3
+*.flac
+*.pkf
+
+# Logs
+*.log
+wandb/
+lightning_logs/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.tmp

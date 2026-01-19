@@ -45,12 +45,14 @@ def save_yaml(data, prefix="../configs/temp"):
     return file_name
 
 
-def shell_run_cmd(cmd):
+def shell_run_cmd(cmd, cwd=None):
     print('running:', cmd)
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    print('cwd:', cwd)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True, cwd=cwd, encoding='utf-8', errors='replace')
     stdout, stderr = p.communicate()
-    print(stdout)
-    print(stderr)
+    print('STDOUT:', stdout)
+    print('STDERR:', stderr)
+    return p.returncode
 
 
 def compute_rolloff_freq(audio_file, roll_percent=0.99):
@@ -65,7 +67,13 @@ def upsample_one_sample(audio_filename, output_audio_filename, predict_n_steps=5
 
     assert output_audio_filename != audio_filename, "output filename cannot be input filename"
 
-    inference_config = load_yaml('../configs/inference_files_upsampling.yaml')
+    # Get absolute paths
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_dir = os.path.dirname(script_dir)
+    audio_filename = os.path.abspath(audio_filename)
+    output_audio_filename = os.path.abspath(output_audio_filename)
+
+    inference_config = load_yaml(os.path.join(repo_dir, 'configs', 'inference_files_upsampling.yaml'))
     inference_config['data']['predict_filelist'] = [{
         'filepath': audio_filename,
         'output_subdir': '.'
@@ -76,18 +84,24 @@ def upsample_one_sample(audio_filename, output_audio_filename, predict_n_steps=5
         'min_cutoff_freq': cutoff_freq,
         'max_cutoff_freq': cutoff_freq
     }
-    temporary_yaml_file = save_yaml(inference_config)
+    temporary_yaml_file = save_yaml(inference_config, prefix=os.path.join(repo_dir, 'configs', 'temp'))
 
-    cmd = "cd ../; \
-        python ensembled_inference_api.py predict \
-            -c configs/ensemble_2split_sampling.yaml \
-            -c {} \
-            --model.predict_n_steps={} \
-            --model.output_audio_filename={}; \
-        cd inference/".format(temporary_yaml_file.replace('../', ''), predict_n_steps, output_audio_filename)
-    shell_run_cmd(cmd)
+    cmd = 'python ensembled_inference_api.py predict ' \
+          '-c configs/ensemble_2split_sampling.yaml ' \
+          '-c {} ' \
+          '--model.predict_n_steps={} ' \
+          '--model.output_audio_filename="{}"'.format(
+              os.path.relpath(temporary_yaml_file, repo_dir), 
+              predict_n_steps, 
+              output_audio_filename
+          )
     
-    os.remove(temporary_yaml_file)
+    returncode = shell_run_cmd(cmd, cwd=repo_dir)
+    
+    if os.path.exists(temporary_yaml_file):
+        os.remove(temporary_yaml_file)
+    
+    return returncode
 
 
 def main():

@@ -20,7 +20,7 @@ import torchaudio
 import inspect
 from audio_utils import phase_channels_to_R, stft_mag_R_to_wav, phase_R_to_channels
 from audio_transforms.transforms import apply_audio_transforms
-import ssr_eval
+# import ssr_eval  # Only needed for validation/testing, not for inference
 from collections import defaultdict, OrderedDict
 import copy
 import os

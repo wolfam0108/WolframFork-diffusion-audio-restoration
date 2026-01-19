@@ -2,7 +2,7 @@
 seed_everything: 0
 trainer:
   accelerator: gpu
-  strategy: ddp
+  strategy: auto  # Changed from ddp for single GPU inference
   devices: 1
   num_nodes: 1
   precision: 32-true
@@ -36,11 +36,7 @@ trainer:
   profiler: null
   detect_anomaly: false
   barebones: false
-  plugins:
-    - class_path: lightning.fabric.plugins.environments.SLURMEnvironment
-      init_args:
-        auto_requeue: true
-        requeue_signal: null
+  plugins: null  # Removed SLURM plugin for local execution
   sync_batchnorm: false
   reload_dataloaders_every_n_epochs: 0
 model:
@@ -81,8 +77,8 @@ model:
   use_ot_ode: false
   beta_max: 1.0
   pretrained_checkpoints:
-    - PATH/TO/FIRST/SPLIT.ckpt
-    - PATH/TO/SECOND/SPLIT.ckpt
+    - checkpoints/ckpt/A2SB_twosplit_0.0_0.5_release.ckpt
+    - checkpoints/ckpt/A2SB_twosplit_0.5_1.0_release.ckpt
   t_cutoffs: [ 0.5 ]
 data:
   mix_dataset_config:

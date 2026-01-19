@@ -23,6 +23,79 @@ This repo contains the PyTorch implementation of [A2SB: Audio-to-Audio Schroding
 - A2SB is the first long audio restoration model that could restore hour-long audio without
 boundary artifacts.
 
+---
+
+# 🔧 Fork Modifications
+
+This fork includes the following modifications for easier local inference:
+
+### Changes Made:
+1. **`inference/A2SB_upsample_chunked.py`** - New standalone script for chunked audio processing
+   - Supports **stereo audio** (processes each channel separately, then combines)
+   - **Memory-efficient chunked processing** with overlap and crossfade
+   - Automatic spectral rolloff frequency detection
+   - Progress bar for each chunk
+   - Works with long audio files (tested on 7+ minute files)
+
+2. **`configs/ensemble_2split_sampling.yaml`**:
+   - Removed SLURM plugin for local execution
+   - Changed strategy from `ddp` to `auto` for single GPU inference
+   - Updated checkpoint paths to local `checkpoints/ckpt/` directory
+
+3. **`A2SB_lightning_module_api.py`**:
+   - Commented out `ssr_eval` import (not needed for inference)
+
+4. **`plotting_utils.py`**:
+   - Replaced deprecated `moviepy.video.io.bindings.mplfig_to_npimage` with custom implementation
+
+5. **`inference/A2SB_upsample_api.py`**:
+   - Fixed paths and subprocess calls for Windows compatibility
+
+---
+
+# 🚀 Quick Start (Inference)
+
+## 1. Create Environment
+```bash
+conda create -n a2sb python=3.10 -y
+conda activate a2sb
+```
+
+## 2. Install Dependencies
+```bash
+pip install numpy scipy matplotlib jsonargparse librosa soundfile einops rotary_embedding_torch pyyaml tqdm huggingface_hub lightning moviepy
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128  # For CUDA 12.8
+pip install "jsonargparse[signatures]>=4.27.7"
+```
+
+## 3. Download Checkpoints
+```bash
+python -c "from huggingface_hub import snapshot_download; snapshot_download('nvidia/audio_to_audio_schrodinger_bridge', local_dir='checkpoints')"
+```
+
+## 4. Run Inference
+
+### Chunked Processing (Recommended for long files, supports stereo)
+```bash
+cd inference
+python A2SB_upsample_chunked.py -f "input.wav" -o "output.wav" -n 50 -c 30.0 --overlap 2.0
+```
+
+**Parameters:**
+- `-f` / `--input_file` — Input audio file (mono or stereo)
+- `-o` / `--output_file` — Output audio file
+- `-n` / `--n_steps` — Diffusion steps (default: 50, use 25 for faster preview)
+- `-c` / `--chunk_duration` — Chunk duration in seconds (default: 30)
+- `--overlap` — Overlap between chunks in seconds (default: 2)
+- `--checkpoint_dir` — Path to checkpoint directory (default: `../checkpoints/ckpt`)
+
+### Original API (Single file, mono only)
+```bash
+cd inference
+python A2SB_upsample_api.py -f "input.wav" -o "output.wav" -n 50
+```
+
+---
 
 # Usage
 
@@ -77,7 +150,7 @@ python A2SB_upsample_api.py -f DEGRADED.wav -o RESTORED.wav -n N_STEPS
 ## Requirements
 
 ```
-numpy, scipy, matplotlib, jsonargparse, librosa, soundfile, torch, torchaudio, einops, pytorch_lightning, rotary_embedding_torch, ssr_eval
+numpy, scipy, matplotlib, jsonargparse[signatures], librosa, soundfile, torch, torchaudio, einops, pytorch_lightning, lightning, rotary_embedding_torch, pyyaml, tqdm, huggingface_hub, moviepy
 ```
 
 
@@ -102,3 +175,4 @@ For business inquiries, please visit our website and submit the form: [NVIDIA Re
 NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications.  When downloaded or used in accordance with our terms of service, developers should work with their internal model team to ensure this model meets requirements for the relevant industry and use case and addresses unforeseen product misuse. 
 
 Please report security vulnerabilities or NVIDIA AI Concerns [here](https://www.nvidia.com/en-us/support/submit-security-vulnerability/).
+
